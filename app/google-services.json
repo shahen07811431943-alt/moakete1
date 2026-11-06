@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "17729622237",
+    "project_id": "moakete-3e916",
+    "storage_bucket": "moakete-3e916.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:17729622237:android:732a96a9437f4782cacb34",
+        "android_client_info": {
+          "package_name": "com.moakete"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "17729622237-6no2ot3v6l628rrdf6mr203lm9vo6htv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.moakete",
+            "certificate_hash": "7e980f3bc1851b69330882b64a55fb2ce6fe2427"
+          }
+        },
+        {
+          "client_id": "17729622237-7573cs8isfv1j39ehs980d1mj1k1f1uc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAYitNwmwTYJTfDAcVEHjFdjjfvIK7ZT7g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "17729622237-7573cs8isfv1j39ehs980d1mj1k1f1uc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
