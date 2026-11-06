@@ -1,1 +1,1478 @@
-
+[
+    {
+        "id": 1,
+        "number": 1,
+        "title": "أذكار الصباح والمساء",
+        "categoryId": 1
+    },
+    {
+        "id": 2,
+        "number": 2,
+        "title": "ما يقال في الصباح خاصة",
+        "categoryId": 1
+    },
+    {
+        "id": 3,
+        "number": 3,
+        "title": "ما يقال عند المساء خاصة",
+        "categoryId": 1
+    },
+    {
+        "id": 4,
+        "number": 4,
+        "title": "ما يقال عند النوم",
+        "categoryId": 2
+    },
+    {
+        "id": 5,
+        "number": 5,
+        "title": "ما يقول إذا وضع ثوبه لنوم ونحوه",
+        "categoryId": 2
+    },
+    {
+        "id": 6,
+        "number": 6,
+        "title": "الدعاء إذا فزع من النوم",
+        "categoryId": 2
+    },
+    {
+        "id": 7,
+        "number": 7,
+        "title": "الدعاء إذا تقلب بالليل",
+        "categoryId": 2
+    },
+    {
+        "id": 8,
+        "number": 8,
+        "title": "ما يقول مَن استيقظ بالليل",
+        "categoryId": 2
+    },
+    {
+        "id": 9,
+        "number": 9,
+        "title": "الدعاء والاستغفار في الثلث الآخر من الليل",
+        "categoryId": 2
+    },
+    {
+        "id": 10,
+        "number": 10,
+        "title": "دعاء القنوت في الوتر",
+        "categoryId": 5
+    },
+    {
+        "id": 11,
+        "number": 11,
+        "title": "الذكر بعد الوتر",
+        "categoryId": 5
+    },
+    {
+        "id": 12,
+        "number": 12,
+        "title": "القنوت في الصلوات الخمس للنازلة",
+        "categoryId": 5
+    },
+    {
+        "id": 13,
+        "number": 13,
+        "title": "ما يصنع من رأى رؤيا يكرهها",
+        "categoryId": 2
+    },
+    {
+        "id": 14,
+        "number": 14,
+        "title": "أذكار الاستيقاظ من النوم",
+        "categoryId": 2
+    },
+    {
+        "id": 15,
+        "number": 15,
+        "title": "دخول الخلاء",
+        "categoryId": 3
+    },
+    {
+        "id": 16,
+        "number": 16,
+        "title": "ما يقول إذا خرج من الخلاء",
+        "categoryId": 3
+    },
+    {
+        "id": 17,
+        "number": 17,
+        "title": "الدعاء إذا لبس ثوباً جديداً",
+        "categoryId": 7
+    },
+    {
+        "id": 18,
+        "number": 18,
+        "title": "الدعاء لمن لبس ثوباً جديداً",
+        "categoryId": 7
+    },
+    {
+        "id": 19,
+        "number": 19,
+        "title": "التسمية على الوضوء",
+        "categoryId": 3
+    },
+    {
+        "id": 20,
+        "number": 20,
+        "title": "الذكر بعد الوضوء",
+        "categoryId": 3
+    },
+    {
+        "id": 21,
+        "number": 21,
+        "title": "الصلاة بعد الوضوء",
+        "categoryId": 3
+    },
+    {
+        "id": 22,
+        "number": 22,
+        "title": "ما يقول إذا خرج من المنـزل",
+        "categoryId": 6
+    },
+    {
+        "id": 23,
+        "number": 23,
+        "title": "الذكر عند دخول المنـزل",
+        "categoryId": 6
+    },
+    {
+        "id": 24,
+        "number": 24,
+        "title": "دعاء الخروج إلى المسجد",
+        "categoryId": 4
+    },
+    {
+        "id": 25,
+        "number": 25,
+        "title": "الدعاء عند دخول المسجد",
+        "categoryId": 4
+    },
+    {
+        "id": 26,
+        "number": 26,
+        "title": "الدعاء عند الخروج من المسجد",
+        "categoryId": 4
+    },
+    {
+        "id": 27,
+        "number": 27,
+        "title": "فضل الأذان",
+        "categoryId": 4
+    },
+    {
+        "id": 28,
+        "number": 28,
+        "title": "صفة الأذان",
+        "categoryId": 4
+    },
+    {
+        "id": 29,
+        "number": 29,
+        "title": "الزيادة على الأذان",
+        "categoryId": 4
+    },
+    {
+        "id": 30,
+        "number": 30,
+        "title": "الذكر عند سماع المؤذن",
+        "categoryId": 4
+    },
+    {
+        "id": 31,
+        "number": 31,
+        "title": "الدعاء بين الأذان والإقامة",
+        "categoryId": 4
+    },
+    {
+        "id": 32,
+        "number": 32,
+        "title": "صفة الإقامة",
+        "categoryId": 4
+    },
+    {
+        "id": 33,
+        "number": 33,
+        "title": "القول عند سماع الإقامة",
+        "categoryId": 4
+    },
+    {
+        "id": 34,
+        "number": 34,
+        "title": "خطبة الإمام بين يدي المصلين",
+        "categoryId": 5
+    },
+    {
+        "id": 35,
+        "number": 35,
+        "title": "التكبير للصلاة",
+        "categoryId": 5
+    },
+    {
+        "id": 36,
+        "number": 36,
+        "title": "استفتاح الصلاة",
+        "categoryId": 5
+    },
+    {
+        "id": 37,
+        "number": 37,
+        "title": "الاستعاذة قبل القراءة",
+        "categoryId": 5
+    },
+    {
+        "id": 38,
+        "number": 38,
+        "title": "ركنية \"الفاتحة\" وفضائلها",
+        "categoryId": 5
+    },
+    {
+        "id": 39,
+        "number": 39,
+        "title": "صفة قراءة \"الفاتحة \"",
+        "categoryId": 5
+    },
+    {
+        "id": 40,
+        "number": 40,
+        "title": "ما يقول من لم يستطع قراءة \"الفاتحة\"",
+        "categoryId": 5
+    },
+    {
+        "id": 41,
+        "number": 41,
+        "title": "قول (( آمين )) خلف الأمام",
+        "categoryId": 5
+    },
+    {
+        "id": 42,
+        "number": 42,
+        "title": "الجهر ب ـ (( آمين ))",
+        "categoryId": 5
+    },
+    {
+        "id": 43,
+        "number": 43,
+        "title": "الفتحُ على الإمام",
+        "categoryId": 5
+    },
+    {
+        "id": 44,
+        "number": 44,
+        "title": "التسبيح لمن نابه شيء في الصلاة",
+        "categoryId": 5
+    },
+    {
+        "id": 45,
+        "number": 45,
+        "title": "القراءة في سنة الفجر",
+        "categoryId": 5
+    },
+    {
+        "id": 46,
+        "number": 46,
+        "title": "القراءة في صلاة الفجر",
+        "categoryId": 5
+    },
+    {
+        "id": 47,
+        "number": 47,
+        "title": "القراءة في صلاة الفجر يوم الجمعة",
+        "categoryId": 5
+    },
+    {
+        "id": 48,
+        "number": 48,
+        "title": "القراءة في صلاة الظهر",
+        "categoryId": 5
+    },
+    {
+        "id": 49,
+        "number": 49,
+        "title": "القراءة في صلاة العصر",
+        "categoryId": 5
+    },
+    {
+        "id": 50,
+        "number": 50,
+        "title": "القراءة في صلاة المغرب",
+        "categoryId": 5
+    },
+    {
+        "id": 51,
+        "number": 51,
+        "title": "القراءة في سنة المغرب",
+        "categoryId": 5
+    },
+    {
+        "id": 52,
+        "number": 52,
+        "title": "القراءة في صلاة العشاء",
+        "categoryId": 5
+    },
+    {
+        "id": 53,
+        "number": 53,
+        "title": "القراءة في صلاة الليل",
+        "categoryId": 5
+    },
+    {
+        "id": 54,
+        "number": 54,
+        "title": "القراءة في صلاة الوتر",
+        "categoryId": 5
+    },
+    {
+        "id": 55,
+        "number": 55,
+        "title": "القراءة في صلاة الجمعة",
+        "categoryId": 5
+    },
+    {
+        "id": 56,
+        "number": 56,
+        "title": "القراءة في صلاة العيدين",
+        "categoryId": 5
+    },
+    {
+        "id": 57,
+        "number": 57,
+        "title": "القراءة في صلاة الجنازة",
+        "categoryId": 5
+    },
+    {
+        "id": 58,
+        "number": 58,
+        "title": "أذكار الركوع",
+        "categoryId": 5
+    },
+    {
+        "id": 59,
+        "number": 59,
+        "title": "القيام من الركوع",
+        "categoryId": 5
+    },
+    {
+        "id": 60,
+        "number": 60,
+        "title": "أذكار السجود",
+        "categoryId": 5
+    },
+    {
+        "id": 61,
+        "number": 61,
+        "title": "الأذكار بين السجدتين",
+        "categoryId": 5
+    },
+    {
+        "id": 62,
+        "number": 62,
+        "title": "التشهد في الصلاة",
+        "categoryId": 5
+    },
+    {
+        "id": 63,
+        "number": 63,
+        "title": "الصلاة على النبي ﷺ في التشهد الأول ومشروعية الدعاء فيه",
+        "categoryId": 5
+    },
+    {
+        "id": 64,
+        "number": 64,
+        "title": "الصلاة على النبي ﷺ بعد التشهد",
+        "categoryId": 5
+    },
+    {
+        "id": 65,
+        "number": 65,
+        "title": "الدعاء بعد التشهد",
+        "categoryId": 5
+    },
+    {
+        "id": 66,
+        "number": 66,
+        "title": "التسليم من الصلاة",
+        "categoryId": 5
+    },
+    {
+        "id": 67,
+        "number": 67,
+        "title": "الذكر والدعاء بعد الصلاة",
+        "categoryId": 5
+    },
+    {
+        "id": 68,
+        "number": 68,
+        "title": "صفة عقد التسبيح",
+        "categoryId": 5
+    },
+    {
+        "id": 69,
+        "number": 69,
+        "title": "الاستعاذةُ والتَّفْلُ في الصلاة لدفع الوسوسة",
+        "categoryId": 5
+    },
+    {
+        "id": 70,
+        "number": 70,
+        "title": "فضل قراءة القرآن",
+        "categoryId": 18
+    },
+    {
+        "id": 71,
+        "number": 71,
+        "title": "صفة قراءة النبي ﷺ",
+        "categoryId": 18
+    },
+    {
+        "id": 72,
+        "number": 72,
+        "title": "تحسين الصوت بالقراءة",
+        "categoryId": 18
+    },
+    {
+        "id": 73,
+        "number": 73,
+        "title": "ما يستحب من الذكر أثناء القراءة",
+        "categoryId": 18
+    },
+    {
+        "id": 74,
+        "number": 74,
+        "title": "إذا مر بآية رحمة أن يسأل الله من فضله وإذا مر بآية عذاب تعوذ",
+        "categoryId": 18
+    },
+    {
+        "id": 75,
+        "number": 75,
+        "title": "دعاء سجود التلاوة",
+        "categoryId": 18
+    },
+    {
+        "id": 76,
+        "number": 76,
+        "title": "في كم يختم القرآن",
+        "categoryId": 18
+    },
+    {
+        "id": 77,
+        "number": 77,
+        "title": "الدعاء عند ختم القرآن",
+        "categoryId": 18
+    },
+    {
+        "id": 78,
+        "number": 78,
+        "title": "الأمر بتعاهد القرآن بكثرة التلاوة",
+        "categoryId": 18
+    },
+    {
+        "id": 79,
+        "number": 79,
+        "title": "النهي عن قول: نسيت آية كذا",
+        "categoryId": 18
+    },
+    {
+        "id": 80,
+        "number": 80,
+        "title": "صلاة الضحى",
+        "categoryId": 5
+    },
+    {
+        "id": 81,
+        "number": 81,
+        "title": "دعاء صلاة الاستخارة",
+        "categoryId": 5
+    },
+    {
+        "id": 82,
+        "number": 82,
+        "title": "النداء لصلاة الكسوف",
+        "categoryId": 21
+    },
+    {
+        "id": 83,
+        "number": 83,
+        "title": "الذكر والدعاء والاستغفار عند الكسوف",
+        "categoryId": 21
+    },
+    {
+        "id": 84,
+        "number": 84,
+        "title": "صلاة الكسوف",
+        "categoryId": 21
+    },
+    {
+        "id": 85,
+        "number": 85,
+        "title": "فضل الصلاة على النبي ﷺ",
+        "categoryId": 21
+    },
+    {
+        "id": 86,
+        "number": 86,
+        "title": "وجوب ذكر الله والصلاة على النبي ﷺ في كل مجلس",
+        "categoryId": 21
+    },
+    {
+        "id": 87,
+        "number": 87,
+        "title": "الصلاة على النبي ﷺ بين يدي الدعاء",
+        "categoryId": 5
+    },
+    {
+        "id": 88,
+        "number": 88,
+        "title": "الصلاة على النبي ﷺ يوم الجمعة",
+        "categoryId": 19
+    },
+    {
+        "id": 89,
+        "number": 89,
+        "title": "خطبة الحاجة",
+        "categoryId": 5
+    },
+    {
+        "id": 90,
+        "number": 90,
+        "title": "قراءة سورة الكهف يوم الجمعة",
+        "categoryId": 19
+    },
+    {
+        "id": 91,
+        "number": 91,
+        "title": "الدعاء في آخر ساعة يوم الجمعة",
+        "categoryId": 19
+    },
+    {
+        "id": 92,
+        "number": 92,
+        "title": "دعاء ليلة القدر",
+        "categoryId": 16
+    },
+    {
+        "id": 93,
+        "number": 93,
+        "title": "صفة صلاة الاستسقاء",
+        "categoryId": 21
+    },
+    {
+        "id": 94,
+        "number": 94,
+        "title": "دعاء الاستسقاء",
+        "categoryId": 21
+    },
+    {
+        "id": 95,
+        "number": 95,
+        "title": "الدعاء عند الريح",
+        "categoryId": 21
+    },
+    {
+        "id": 96,
+        "number": 96,
+        "title": "النهي عن سب الريح",
+        "categoryId": 21
+    },
+    {
+        "id": 97,
+        "number": 97,
+        "title": "الدعاء عند الرعد",
+        "categoryId": 21
+    },
+    {
+        "id": 98,
+        "number": 98,
+        "title": "الدعاء عند نزول المطر",
+        "categoryId": 21
+    },
+    {
+        "id": 99,
+        "number": 99,
+        "title": "الدعاء وقت المطر إذا خيف منه الضرر",
+        "categoryId": 21
+    },
+    {
+        "id": 100,
+        "number": 100,
+        "title": "ما يفعل عند نزول المطر",
+        "categoryId": 21
+    },
+    {
+        "id": 101,
+        "number": 101,
+        "title": "الذكر بعد نزول المغيث",
+        "categoryId": 21
+    },
+    {
+        "id": 102,
+        "number": 102,
+        "title": "الدعاء عند رؤية الهلال",
+        "categoryId": 21
+    },
+    {
+        "id": 103,
+        "number": 103,
+        "title": "الاستعاذة عند روية القمر",
+        "categoryId": 21
+    },
+    {
+        "id": 104,
+        "number": 104,
+        "title": "النهي عن سب الديك",
+        "categoryId": 16
+    },
+    {
+        "id": 105,
+        "number": 105,
+        "title": "الدعاء عند سماع صياح الديك بالليل",
+        "categoryId": 16
+    },
+    {
+        "id": 106,
+        "number": 106,
+        "title": "الاستعاذة عند سماع نباح الكلاب ونهيق الحمير بالليل",
+        "categoryId": 16
+    },
+    {
+        "id": 107,
+        "number": 107,
+        "title": "إفشاء السلام",
+        "categoryId": 8
+    },
+    {
+        "id": 108,
+        "number": 108,
+        "title": "صفة إلقاء السلام",
+        "categoryId": 8
+    },
+    {
+        "id": 109,
+        "number": 109,
+        "title": "صفة رد السلام",
+        "categoryId": 8
+    },
+    {
+        "id": 110,
+        "number": 110,
+        "title": "تسليم الراكب على الماشي والقليل على الكثير",
+        "categoryId": 8
+    },
+    {
+        "id": 111,
+        "number": 111,
+        "title": "إلقاء السلام في كل لقاء",
+        "categoryId": 8
+    },
+    {
+        "id": 112,
+        "number": 112,
+        "title": "السلام عند القيام من المجلس",
+        "categoryId": 8
+    },
+    {
+        "id": 113,
+        "number": 113,
+        "title": "السلام على الصبيان",
+        "categoryId": 8
+    },
+    {
+        "id": 114,
+        "number": 114,
+        "title": "سلام الرجال على النساء من غير المحارم",
+        "categoryId": 8
+    },
+    {
+        "id": 115,
+        "number": 115,
+        "title": "حكم مصافحة النساء غير المحارم",
+        "categoryId": 8
+    },
+    {
+        "id": 116,
+        "number": 116,
+        "title": "السلام إذا دخل على أهل بيتٍ",
+        "categoryId": 8
+    },
+    {
+        "id": 117,
+        "number": 117,
+        "title": "سلام الرجل إذا دخل بيته",
+        "categoryId": 8
+    },
+    {
+        "id": 118,
+        "number": 118,
+        "title": "السلام على النائم",
+        "categoryId": 8
+    },
+    {
+        "id": 119,
+        "number": 119,
+        "title": "السلام ممن دخل بيتاً ليس فيه أحد",
+        "categoryId": 8
+    },
+    {
+        "id": 120,
+        "number": 120,
+        "title": "السلام على المصلي والرد بالإشارة",
+        "categoryId": 8
+    },
+    {
+        "id": 121,
+        "number": 121,
+        "title": "السلام على قارئ القرآن والمؤذن والداعي وغيرهم",
+        "categoryId": 8
+    },
+    {
+        "id": 122,
+        "number": 122,
+        "title": "حكم التشميت وإلقاء السلام ورده والأمام يخطب",
+        "categoryId": 8
+    },
+    {
+        "id": 123,
+        "number": 123,
+        "title": "لا تبدأوا اليهود والنصارى بالسلام",
+        "categoryId": 8
+    },
+    {
+        "id": 124,
+        "number": 124,
+        "title": "كيف يرد السلام على الكافر",
+        "categoryId": 8
+    },
+    {
+        "id": 125,
+        "number": 125,
+        "title": "دعاء دخول السوق",
+        "categoryId": 6
+    },
+    {
+        "id": 126,
+        "number": 126,
+        "title": "ما يقال لمن يبيع أو يبتاع في المسجد",
+        "categoryId": 4
+    },
+    {
+        "id": 127,
+        "number": 127,
+        "title": "ما يقال لمن ينشد ضالة في المسجد",
+        "categoryId": 4
+    },
+    {
+        "id": 128,
+        "number": 128,
+        "title": "إنشاد الشعر الحسن قي المسجد",
+        "categoryId": 4
+    },
+    {
+        "id": 129,
+        "number": 129,
+        "title": "الدعاء لمن غلبه الدين",
+        "categoryId": 12
+    },
+    {
+        "id": 130,
+        "number": 130,
+        "title": "دعاء من استصعب عليه أمر",
+        "categoryId": 16
+    },
+    {
+        "id": 131,
+        "number": 131,
+        "title": "الدعاء لمن عرض عليك ماله",
+        "categoryId": 16
+    },
+    {
+        "id": 132,
+        "number": 132,
+        "title": "دعاء المقترض عند السداد",
+        "categoryId": 10
+    },
+    {
+        "id": 133,
+        "number": 133,
+        "title": "ما يقول من قال له إني: أحبك في الله",
+        "categoryId": 10
+    },
+    {
+        "id": 134,
+        "number": 134,
+        "title": "إعلام الرجل أخاه أنه يحبه في الله",
+        "categoryId": 10
+    },
+    {
+        "id": 135,
+        "number": 135,
+        "title": "الدعاء بظهر الغيب",
+        "categoryId": 10
+    },
+    {
+        "id": 136,
+        "number": 136,
+        "title": "الدعاء لمن صنع لك معروفاً",
+        "categoryId": 10
+    },
+    {
+        "id": 137,
+        "number": 137,
+        "title": "ماذا يقول إذا مَدَحَ مسلماً",
+        "categoryId": 10
+    },
+    {
+        "id": 138,
+        "number": 138,
+        "title": "ماذا يقول الرجل إذا زُكِّي",
+        "categoryId": 10
+    },
+    {
+        "id": 139,
+        "number": 139,
+        "title": "دعاء الخوف من الشرك",
+        "categoryId": 16
+    },
+    {
+        "id": 140,
+        "number": 140,
+        "title": "لا يقال ما شاء الله وشاء فلان",
+        "categoryId": 17
+    },
+    {
+        "id": 141,
+        "number": 141,
+        "title": "النهي عن الحلف بغير الله",
+        "categoryId": 17
+    },
+    {
+        "id": 142,
+        "number": 142,
+        "title": "النهي عن سب الدهر",
+        "categoryId": 17
+    },
+    {
+        "id": 143,
+        "number": 143,
+        "title": "ما يقال عند التعجب",
+        "categoryId": 17
+    },
+    {
+        "id": 144,
+        "number": 144,
+        "title": "التكبير عند الأمر السار",
+        "categoryId": 17
+    },
+    {
+        "id": 145,
+        "number": 145,
+        "title": "الدعاء لمن سببته",
+        "categoryId": 17
+    },
+    {
+        "id": 146,
+        "number": 146,
+        "title": "ما يقول ويفعل من أذنب ذنباً",
+        "categoryId": 17
+    },
+    {
+        "id": 147,
+        "number": 147,
+        "title": "دعاء العطاس",
+        "categoryId": 10
+    },
+    {
+        "id": 148,
+        "number": 148,
+        "title": "لا يشمت العاطس إذا لم يحمد الله",
+        "categoryId": 10
+    },
+    {
+        "id": 149,
+        "number": 149,
+        "title": "إذا تكرر العطاس",
+        "categoryId": 10
+    },
+    {
+        "id": 150,
+        "number": 150,
+        "title": "ما يقال للكافر إذا عطس",
+        "categoryId": 10
+    },
+    {
+        "id": 151,
+        "number": 151,
+        "title": "ما يفعل من تثاءب",
+        "categoryId": 17
+    },
+    {
+        "id": 152,
+        "number": 152,
+        "title": "الذكر في المجلس",
+        "categoryId": 10
+    },
+    {
+        "id": 153,
+        "number": 153,
+        "title": "دعاء كفارة المجلس",
+        "categoryId": 10
+    },
+    {
+        "id": 154,
+        "number": 154,
+        "title": "الدعاء لذهاب الغضب",
+        "categoryId": 10
+    },
+    {
+        "id": 155,
+        "number": 155,
+        "title": "دعاء من أهدى هدية ودعي له",
+        "categoryId": 10
+    },
+    {
+        "id": 157,
+        "number": 157,
+        "title": "الدعاء عند رؤية باكورة الثمر",
+        "categoryId": 16
+    },
+    {
+        "id": 158,
+        "number": 158,
+        "title": "دعاء شراء الدابة أو السيارة",
+        "categoryId": 10
+    },
+    {
+        "id": 159,
+        "number": 159,
+        "title": "التسمية على الطعام",
+        "categoryId": 9
+    },
+    {
+        "id": 160,
+        "number": 160,
+        "title": "من نسي أن يذكر الله في أول طعامه",
+        "categoryId": 9
+    },
+    {
+        "id": 161,
+        "number": 161,
+        "title": "التسمية على الطعام الذي لا يدري أذكر عليه اسم الله أم لا",
+        "categoryId": 9
+    },
+    {
+        "id": 162,
+        "number": 162,
+        "title": "الدعاء بعد الطعام",
+        "categoryId": 9
+    },
+    {
+        "id": 163,
+        "number": 163,
+        "title": "ما يقول إذا شرب اللبن",
+        "categoryId": 9
+    },
+    {
+        "id": 164,
+        "number": 164,
+        "title": "التسمية عند الشراب",
+        "categoryId": 9
+    },
+    {
+        "id": 165,
+        "number": 165,
+        "title": "دعاء الضيف لأهل الطعام",
+        "categoryId": 9
+    },
+    {
+        "id": 166,
+        "number": 166,
+        "title": "دعاء الصائم عند فطره",
+        "categoryId": 9
+    },
+    {
+        "id": 167,
+        "number": 167,
+        "title": "الدعاء لمن أفطر عنده",
+        "categoryId": 9
+    },
+    {
+        "id": 168,
+        "number": 168,
+        "title": "ما يقول من حضر الطعام وهو صائم إذا لم يفطر",
+        "categoryId": 9
+    },
+    {
+        "id": 169,
+        "number": 169,
+        "title": "دعاء من نزل به ضيف",
+        "categoryId": 9
+    },
+    {
+        "id": 170,
+        "number": 170,
+        "title": "ما يقول الصائم إذا سابه أحد",
+        "categoryId": 17
+    },
+    {
+        "id": 171,
+        "number": 171,
+        "title": "الدعاء للمتزوج",
+        "categoryId": 11
+    },
+    {
+        "id": 172,
+        "number": 172,
+        "title": "دعاء المتزوج إذا دخل على زوجته ليلة العرس",
+        "categoryId": 11
+    },
+    {
+        "id": 173,
+        "number": 173,
+        "title": "الدعاء قبل الجماع",
+        "categoryId": 11
+    },
+    {
+        "id": 174,
+        "number": 174,
+        "title": "الدعاء للمولود عند تحنيكه",
+        "categoryId": 11
+    },
+    {
+        "id": 175,
+        "number": 175,
+        "title": "الدعاء بعد التسليم للقضاء من غير عجز ولا تفريط",
+        "categoryId": 17
+    },
+    {
+        "id": 176,
+        "number": 176,
+        "title": "العزم في الدعاء ولا يقل إن شئت",
+        "categoryId": 17
+    },
+    {
+        "id": 177,
+        "number": 177,
+        "title": "كراهية الدعاء بتعجيل العقوبة في الدنيا",
+        "categoryId": 17
+    },
+    {
+        "id": 178,
+        "number": 178,
+        "title": "الحمد لمن جاءه أمر يسره أو يكرهه",
+        "categoryId": 17
+    },
+    {
+        "id": 179,
+        "number": 179,
+        "title": "ما يقال عند الكرب",
+        "categoryId": 12
+    },
+    {
+        "id": 180,
+        "number": 180,
+        "title": "ما يقال عند الهم والحزن",
+        "categoryId": 12
+    },
+    {
+        "id": 181,
+        "number": 181,
+        "title": "النهي عن أن يدعو المسلم على نفسه وأهله والمال",
+        "categoryId": 17
+    },
+    {
+        "id": 182,
+        "number": 182,
+        "title": "ما يقال من خاف قوماً أو غيرهم",
+        "categoryId": 12
+    },
+    {
+        "id": 183,
+        "number": 183,
+        "title": "الدعاء لطرد الشيطان",
+        "categoryId": 12
+    },
+    {
+        "id": 184,
+        "number": 184,
+        "title": "الدعاء لرد كيد مردة الشياطين",
+        "categoryId": 12
+    },
+    {
+        "id": 185,
+        "number": 185,
+        "title": "ما يفعل من أصابه شك في إيمانه",
+        "categoryId": 12
+    },
+    {
+        "id": 186,
+        "number": 186,
+        "title": "العصمة من الدجال",
+        "categoryId": 12
+    },
+    {
+        "id": 187,
+        "number": 187,
+        "title": "ما جاء في الرقى",
+        "categoryId": 13
+    },
+    {
+        "id": 188,
+        "number": 188,
+        "title": "ما يعوذ به الأولاد",
+        "categoryId": 13
+    },
+    {
+        "id": 189,
+        "number": 189,
+        "title": "الشيء يراه ويعجبه ويخشى أن يصيبه بعينه",
+        "categoryId": 13
+    },
+    {
+        "id": 190,
+        "number": 190,
+        "title": "الدعاء لمن أحس وجعاً في جسده",
+        "categoryId": 13
+    },
+    {
+        "id": 191,
+        "number": 191,
+        "title": "فضل عيادة المريض",
+        "categoryId": 13
+    },
+    {
+        "id": 192,
+        "number": 192,
+        "title": "الدعاء للمريض",
+        "categoryId": 13
+    },
+    {
+        "id": 193,
+        "number": 193,
+        "title": "الدعاء عند رؤية أهل البلاء",
+        "categoryId": 13
+    },
+    {
+        "id": 194,
+        "number": 194,
+        "title": "ما يقول إذا تطير بشيء",
+        "categoryId": 13
+    },
+    {
+        "id": 195,
+        "number": 195,
+        "title": "كراهية تمني الموت",
+        "categoryId": 13
+    },
+    {
+        "id": 196,
+        "number": 196,
+        "title": "دعاء المريض إذا شعر بقرب اجله",
+        "categoryId": 13
+    },
+    {
+        "id": 197,
+        "number": 197,
+        "title": "التلقين عند الموت",
+        "categoryId": 14
+    },
+    {
+        "id": 198,
+        "number": 198,
+        "title": "الدعاء عند الميت",
+        "categoryId": 14
+    },
+    {
+        "id": 199,
+        "number": 199,
+        "title": "دعاء من أصيب بمصيبة",
+        "categoryId": 14
+    },
+    {
+        "id": 200,
+        "number": 200,
+        "title": "صفة صلاة الجنازة",
+        "categoryId": 14
+    },
+    {
+        "id": 201,
+        "number": 201,
+        "title": "الدعاء للميت في صلاة الجنازة",
+        "categoryId": 14
+    },
+    {
+        "id": 202,
+        "number": 202,
+        "title": "الدعاء للطفل",
+        "categoryId": 14
+    },
+    {
+        "id": 203,
+        "number": 203,
+        "title": "الدعاء إذا صلّى على السِّقْط",
+        "categoryId": 14
+    },
+    {
+        "id": 204,
+        "number": 204,
+        "title": "دعاء دخول الميت القبر",
+        "categoryId": 14
+    },
+    {
+        "id": 205,
+        "number": 205,
+        "title": "الدعاء بعد الدفن",
+        "categoryId": 14
+    },
+    {
+        "id": 206,
+        "number": 206,
+        "title": "دعاء التعزية",
+        "categoryId": 14
+    },
+    {
+        "id": 207,
+        "number": 207,
+        "title": "دعاء زيارة المقابر",
+        "categoryId": 14
+    },
+    {
+        "id": 208,
+        "number": 208,
+        "title": "ما يقال عند المرور بقبور المشركين",
+        "categoryId": 14
+    },
+    {
+        "id": 209,
+        "number": 209,
+        "title": "صلاة ركعتين لمن أراد السفر",
+        "categoryId": 6
+    },
+    {
+        "id": 210,
+        "number": 210,
+        "title": "صلاة ركعتين إذا قدم من السفر",
+        "categoryId": 6
+    },
+    {
+        "id": 211,
+        "number": 211,
+        "title": "دعاء المقيم للمسافر",
+        "categoryId": 6
+    },
+    {
+        "id": 212,
+        "number": 212,
+        "title": "دعاء المسافر للمقيم",
+        "categoryId": 6
+    },
+    {
+        "id": 213,
+        "number": 213,
+        "title": "دعاء ركوب الدابة",
+        "categoryId": 6
+    },
+    {
+        "id": 214,
+        "number": 214,
+        "title": "التسمية إذا عثرت الدابة أو ما يقوم مقامها",
+        "categoryId": 6
+    },
+    {
+        "id": 215,
+        "number": 215,
+        "title": "دعاء السفر",
+        "categoryId": 6
+    },
+    {
+        "id": 216,
+        "number": 216,
+        "title": "التكبير على المرتفعات والتسبيح عند الهبوط",
+        "categoryId": 6
+    },
+    {
+        "id": 217,
+        "number": 217,
+        "title": "دعاء دخول القرية أو البلدة إذا أراد دخولها",
+        "categoryId": 6
+    },
+    {
+        "id": 218,
+        "number": 218,
+        "title": "الدعاء لمن نزل منـزلاً في سفر أو غيره",
+        "categoryId": 6
+    },
+    {
+        "id": 219,
+        "number": 219,
+        "title": "دعاء المسافر إذا أسحر",
+        "categoryId": 6
+    },
+    {
+        "id": 220,
+        "number": 220,
+        "title": "دعاء الرجوع من السفر",
+        "categoryId": 6
+    },
+    {
+        "id": 221,
+        "number": 221,
+        "title": "النهي عن تمني لقاء العدو",
+        "categoryId": 16
+    },
+    {
+        "id": 222,
+        "number": 222,
+        "title": "ما يقال عند لقاء العدو",
+        "categoryId": 16
+    },
+    {
+        "id": 223,
+        "number": 223,
+        "title": "سؤال الشهادة في سبيل الله",
+        "categoryId": 12
+    },
+    {
+        "id": 224,
+        "number": 224,
+        "title": "صفة التلبية",
+        "categoryId": 15
+    },
+    {
+        "id": 225,
+        "number": 225,
+        "title": "الدعاء عند رؤيته الكعبة",
+        "categoryId": 15
+    },
+    {
+        "id": 226,
+        "number": 226,
+        "title": "الذكر عند الحجر الأسود",
+        "categoryId": 15
+    },
+    {
+        "id": 227,
+        "number": 227,
+        "title": "الذكر في الطواف",
+        "categoryId": 15
+    },
+    {
+        "id": 228,
+        "number": 228,
+        "title": "الدعاء بين الركن اليماني والحجر الأسود",
+        "categoryId": 15
+    },
+    {
+        "id": 229,
+        "number": 229,
+        "title": "الذكر عند مقام إبراهيم عليه السلام",
+        "categoryId": 15
+    },
+    {
+        "id": 230,
+        "number": 230,
+        "title": "الدعاء عند شرب ماء زمزم",
+        "categoryId": 15
+    },
+    {
+        "id": 231,
+        "number": 231,
+        "title": "الدعاء على الصفا والمروة",
+        "categoryId": 15
+    },
+    {
+        "id": 232,
+        "number": 232,
+        "title": "الدعاء في السعي",
+        "categoryId": 15
+    },
+    {
+        "id": 233,
+        "number": 233,
+        "title": "الدعاء يوم عرفه",
+        "categoryId": 15
+    },
+    {
+        "id": 234,
+        "number": 234,
+        "title": "الدعاء عند المشعر الحرام",
+        "categoryId": 15
+    },
+    {
+        "id": 235,
+        "number": 235,
+        "title": "التكبير عند رمي الجمار",
+        "categoryId": 15
+    },
+    {
+        "id": 236,
+        "number": 236,
+        "title": "التكبير في صلاة العيد",
+        "categoryId": 20
+    },
+    {
+        "id": 237,
+        "number": 237,
+        "title": "صفة التكبير في أيام العيدين",
+        "categoryId": 20
+    },
+    {
+        "id": 238,
+        "number": 238,
+        "title": "التهنئة يوم العيد",
+        "categoryId": 20
+    },
+    {
+        "id": 239,
+        "number": 239,
+        "title": "الذكر عند ذبح الأضحية",
+        "categoryId": 20
+    },
+    {
+        "id": 240,
+        "number": 240,
+        "title": "التسمية على الذبيحة",
+        "categoryId": 20
+    },
+    {
+        "id": 241,
+        "number": 241,
+        "title": "الاجتهاد في الدعاء",
+        "categoryId": 17
+    },
+    {
+        "id": 242,
+        "number": 242,
+        "title": "أسماء الله تعالى",
+        "categoryId": 17
+    },
+    {
+        "id": 243,
+        "number": 243,
+        "title": "دعاء الله باسمه الأعظم",
+        "categoryId": 17
+    },
+    {
+        "id": 244,
+        "number": 244,
+        "title": "سؤال الله الجنة والاستجارة من النار",
+        "categoryId": 17
+    },
+    {
+        "id": 245,
+        "number": 245,
+        "title": "استقبال القبلة في الدعاء والذكر",
+        "categoryId": 17
+    },
+    {
+        "id": 246,
+        "number": 246,
+        "title": "الترغيب في الاستغفار",
+        "categoryId": 17
+    },
+    {
+        "id": 247,
+        "number": 247,
+        "title": "الترغيب في الدعاء",
+        "categoryId": 17
+    }
+]
