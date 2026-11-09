@@ -129,6 +129,9 @@ jobs:
 
           # ───────────────────────────── حالة الجهاز ─────────────────────────────
           def ringer():
+              if os.environ.get("API_LEVEL") in ("28", "29"):
+                  m = re.search(r"internal\) = (NORMAL|SILENT|VIBRATE)", sh("dumpsys audio"))
+                  if m: return {"SILENT": 0, "VIBRATE": 1, "NORMAL": 2}[m[1]]
               v = sh("settings get global mode_ringer")
               return int(v) if re.fullmatch(r"-?\d+", v or "") else -1
 
@@ -198,7 +201,7 @@ jobs:
           def make_prefs(cfg):
               p = {}
               for i, k in enumerate(KEYS):
-                  target = (i == cfg["idx"]) or cfg.get("all")
+                  target = (i == cfg.get("idx", -1)) or cfg.get("all")
                   p[f"{k}_sound_enabled"] = True
                   p[f"{k}_moazin"] = MOAZIN[i]
                   p[f"{k}_silent_enabled"] = bool(cfg.get("silent") and target)
@@ -222,6 +225,7 @@ jobs:
                         "wm dismiss-keyguard", "svc power stayon true"]:
                   sh(s)
               set_tz(TZ)
+              adb("emu", "geo", "fix", "43.472522", "35.520968")   # الموصل = النقطة المرجعية
               apk = (glob.glob("apk/*.apk") or glob.glob("app/build/outputs/apk/debug/*.apk") or [""])[0]
               out = adb("install", "-r", "-g", apk, timeout=180)
               C("تثبيت التطبيق", "Success" in out, out.strip()[-200:])
@@ -255,6 +259,7 @@ jobs:
               name = NAMES[idx]
               ok_r = set_ringer(orig)
               C(f"{tag}ضبط وضع الهاتف قبل الاختبار = {RINGER[orig]}", ok_r, f"الحالي: {RINGER[ringer()]}", warn=True)
+              if not ok_r: orig = ringer()   # تعذّر ضبط الوضع المطلوب (المحاكي) → نختبر الاستعادة للوضع الفعلي
               t_mark = time.time()
               ok = set_clock(T - dt.timedelta(seconds=lead)); t_set = time.time()
               C(f"{tag}ضبط الساعة قبل {name} بـ {lead} ثانية", ok, f"{T - dt.timedelta(seconds=lead):%Y-%m-%d %H:%M:%S}", warn=True)
@@ -329,7 +334,7 @@ jobs:
 
               time.sleep(2)
               C(f"{tag}{name}: الخدمة توقفت في النهاية", not svc_running(), "")
-              left = [n for n in notifs() if "|1002|" not in n]
+              left = [n for n in notifs() if "|1002|" not in n and "id=1002" not in n]
               C(f"{tag}{name}: لا إشعار عالق", not left, left[0][-120:] if left else "", warn=True)
               C(f"{tag}{name}: WakeLock تحرّر", not wakelock_held(), "", warn=True)
               fatal = log.find(r"FATAL EXCEPTION", t_mark)
@@ -349,7 +354,7 @@ jobs:
                       good = len(nxt) >= 5 and all(nxt[n].date() == T.date() + dt.timedelta(days=1) for n in NAMES if n in nxt)
                       C("تواريخ الجدولة = اليوم التالي", good, ", ".join(f"{n} {d:%m-%d %H:%M}" for n, d in nxt.items()))
                       if cfg.get("first_azan"):
-                          C("الأذان الأول (قبل الفجر) مجدول", "الأذان الأول" in nxt, "")
+                          C("الأذان الأول (قبل الفجر) مجدول", bool(log.find(r"Scheduled الأذان الأول", r[0])), "")
 
           def sc_all_prayers():
               cfg = dict(all=True, silent=False, orig=2, dnd=True)
@@ -372,6 +377,7 @@ jobs:
               time.sleep(7)
               after = latest(t1, "Asia/Dubai")
               C("إعادة تشغيل الجهاز (BOOT_COMPLETED) → يعيد جدولة الأذان", len(after) >= 5, f"alarms قبل={before}, الجدولة بعد: {len(after)}")
+              sh(f"monkey -p {PKG} -c android.intent.category.LAUNCHER 1"); time.sleep(5)
               t2 = time.time()
               nxt_day = (new["الظهر"].astimezone(ZoneInfo("Asia/Dubai")) + dt.timedelta(days=1)).replace(hour=0, minute=5, second=0)
               set_clock(nxt_day); time.sleep(7)
@@ -468,6 +474,8 @@ jobs:
                   summary(sys.argv[2] if len(sys.argv) > 2 else "all-reports")
               SCN = sys.argv[1]; API = os.environ.get("API_LEVEL", "?")
               OUT = f"report/{SCN}-api{API}"; os.makedirs(OUT, exist_ok=True)
+              if SCN == "clock_tz_boot":
+                  adb("root"); adb("wait-for-device"); time.sleep(3)   # البث المحمي يتطلب root
               log = Logcat(f"{OUT}/logcat.txt")
               try:
                   if SCN == "all_prayers_day":   sc_all_prayers()
