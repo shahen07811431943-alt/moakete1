@@ -130,7 +130,7 @@ jobs:
           # ───────────────────────────── حالة الجهاز ─────────────────────────────
           def ringer():
               if os.environ.get("API_LEVEL") in ("28", "29"):
-                  m = re.search(r"internal\) = (NORMAL|SILENT|VIBRATE)", sh("dumpsys audio"))
+                  m = re.search(r"external\) = (NORMAL|SILENT|VIBRATE)", sh("dumpsys audio"))
                   if m: return {"SILENT": 0, "VIBRATE": 1, "NORMAL": 2}[m[1]]
               v = sh("settings get global mode_ringer")
               return int(v) if re.fullmatch(r"-?\d+", v or "") else -1
@@ -141,6 +141,10 @@ jobs:
           def notifs():
               out = sh("dumpsys notification --noredact", timeout=60)
               return [l.strip() for l in out.splitlines() if "NotificationRecord(" in l and PKG in l]
+
+          def autogroup(n):
+              m = re.search(r"flags=0x([0-9a-f]+)", n)
+              return bool(m and int(m[1], 16) & 0x400)
 
           def wakelock_held():
               return PKG + ":PrayerWakeLock" in sh("dumpsys power | grep -i wakelock")
@@ -257,6 +261,7 @@ jobs:
               """يضع الساعة قبل وقت الصلاة بـ lead ثانية ثم يراقب كل شيء."""
               silent, s, e, orig = cfg.get("silent", False), cfg.get("s", .5), cfg.get("e", 1.5), cfg.get("orig", 2)
               name = NAMES[idx]
+              ft = re.sub(r"\W+", "_", tag)
               ok_r = set_ringer(orig)
               C(f"{tag}ضبط وضع الهاتف قبل الاختبار = {RINGER[orig]}", ok_r, f"الحالي: {RINGER[ringer()]}", warn=True)
               if not ok_r: orig = ringer()   # تعذّر ضبط الوضع المطلوب (المحاكي) → نختبر الاستعادة للوضع الفعلي
@@ -264,7 +269,7 @@ jobs:
               ok = set_clock(T - dt.timedelta(seconds=lead)); t_set = time.time()
               C(f"{tag}ضبط الساعة قبل {name} بـ {lead} ثانية", ok, f"{T - dt.timedelta(seconds=lead):%Y-%m-%d %H:%M:%S}", warn=True)
 
-              rows, seen, gone, shots = [], False, 0, set()
+              rows, seen, gone, shots, killed = [], False, 0, set(), False
               max_s = lead + (e * 60 if silent else 0) + 210
               while time.time() - t_set < max_s:
                   el = time.time() - t_set
@@ -273,13 +278,19 @@ jobs:
                   if sv: seen, gone = True, 0
                   elif seen: gone += 1
                   if "f" not in shots and log.find(r"Prayer alarm triggered", t_mark):
-                      shots.add("f"); time.sleep(3); shot(f"{tag}{idx}_1_fired")
-                  if r == 0 and "s" not in shots: shots.add("s"); shot(f"{tag}{idx}_2_silent_on")
-                  if "s" in shots and r == orig and "e" not in shots: shots.add("e"); shot(f"{tag}{idx}_3_silent_off")
+                      shots.add("f"); time.sleep(3); shot(f"{ft}{idx}_1_fired")
+                  if r == 0 and "s" not in shots: shots.add("s"); shot(f"{ft}{idx}_2_silent_on")
+                  if cfg.get("kill") and r == 0 and not killed:
+                      killed = True
+                      pid = (sh(f"pidof {PKG}").split() or [""])[0]
+                      sh(f"run-as {PKG} kill -9 {pid}")        # قتل عملية فقط (بخلاف force-stop الذي يلغي المنبّهات)
+                      time.sleep(2)
+                      C(f"{tag}{name}: قُتل التطبيق أثناء الصامت", pid != "" and not sh(f"pidof {PKG}").strip().startswith(pid), f"pid {pid}", warn=True)
+                  if "s" in shots and r == orig and "e" not in shots: shots.add("e"); shot(f"{ft}{idx}_3_silent_off")
                   ended = log.find(r"Silent mode ENDED", t_mark) if silent else True
                   if seen and gone >= 3 and ended: break
                   time.sleep(1.5)
-              with open(f"{OUT}/{tag}{idx}_timeline.csv", "w") as f:
+              with open(f"{OUT}/{ft}{idx}_timeline.csv", "w") as f:
                   f.write("seconds,device_clock,ringer,service_running\n")
                   for r in rows: f.write(",".join(map(str, r)) + "\n")
 
@@ -334,7 +345,7 @@ jobs:
 
               time.sleep(2)
               C(f"{tag}{name}: الخدمة توقفت في النهاية", not svc_running(), "")
-              left = [n for n in notifs() if "|1002|" not in n and "id=1002" not in n]
+              left = [n for n in notifs() if "|1002|" not in n and "id=1002" not in n and not autogroup(n)]
               C(f"{tag}{name}: لا إشعار عالق", not left, left[0][-120:] if left else "", warn=True)
               C(f"{tag}{name}: WakeLock تحرّر", not wakelock_held(), "", warn=True)
               fatal = log.find(r"FATAL EXCEPTION", t_mark)
@@ -439,6 +450,7 @@ jobs:
             "silent_disabled": dict(idx=2, silent=False, dnd=True, orig=2),
             "ringer_vibrate":  dict(idx=3, silent=True, dnd=True,  orig=1),
             "vibration_only":  dict(idx=0, silent=False, dnd=True, orig=2, vib_only=True),
+            "kill_during_silent": dict(idx=1, silent=True, dnd=True, orig=2, kill=True),
             "isha_rollover":   dict(idx=4, silent=True, dnd=True,  orig=2, rollover=True, first_azan=True),
           }
 
@@ -586,7 +598,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scenario: ${{ fromJSON(github.event_name == 'workflow_dispatch' && '["custom","silent_with_dnd","silent_no_dnd","silent_disabled","ringer_vibrate","vibration_only","isha_rollover","all_prayers_day","clock_tz_boot","ui_stress"]' || '["silent_with_dnd","silent_no_dnd","silent_disabled","ringer_vibrate","vibration_only","isha_rollover","all_prayers_day","clock_tz_boot","ui_stress"]') }}
+        scenario: ${{ fromJSON(github.event_name == 'workflow_dispatch' && '["custom","silent_with_dnd","silent_no_dnd","silent_disabled","ringer_vibrate","kill_during_silent","vibration_only","isha_rollover","all_prayers_day","clock_tz_boot","ui_stress"]' || '["silent_with_dnd","silent_no_dnd","silent_disabled","ringer_vibrate","kill_during_silent","vibration_only","isha_rollover","all_prayers_day","clock_tz_boot","ui_stress"]') }}
         api: [34]
         include:
           - scenario: silent_with_dnd
