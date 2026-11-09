@@ -37,7 +37,461 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - name: Write audit script
+        run: |
+          mkdir -p audit
+          cat > audit/audit.py <<'PYEOF'
+          #!/usr/bin/env python3
+          """
+          فحص شامل لتطبيق موكيت داخل محاكي أندرويد (GitHub Actions).
+
+          الاستخدام:   python3 audit.py <scenario>      ← يشغّل سيناريو واحد داخل المحاكي
+                       python3 audit.py summary <dir>   ← يجمع كل النتائج في تقرير واحد
+
+          الفكرة: نغيّر ساعة المحاكي لتصبح قبل وقت الصلاة بثوانٍ، ثم نراقب (كأنه وقت حقيقي):
+            متى بدأ الأذان؟ هل بدأ الوضع الصامت في موعده؟ متى انتهى؟ هل رجع وضع الهاتف كما كان؟
+          """
+          import os, re, sys, json, time, glob, threading, traceback, subprocess, hashlib, collections
+          import datetime as dt
+          from zoneinfo import ZoneInfo
+          from xml.sax.saxutils import escape
+
+          PKG = "com.moakete"
+          KEYS = ["fajr", "dhuhr", "asr", "maghrib", "isha"]
+          NAMES = ["الفجر", "الظهر", "العصر", "المغرب", "العشاء"]          # نفس أسماء التطبيق في الكود
+          MOAZIN = ["حمادي عبد الله", "جاسم حمادي", "وسام حمادي", "عبد الملك جاسم", "ريان جاسم"]
+          TZ = "Asia/Baghdad"        # جدول PrayerData مكتوب بتوقيت بغداد
+          RINGER = {0: "صامت", 1: "اهتزاز", 2: "عادي", -1: "؟"}
+          PERMS = ["android.permission.POST_NOTIFICATIONS", "android.permission.ACCESS_FINE_LOCATION",
+                   "android.permission.ACCESS_COARSE_LOCATION"]
+
+          CHECKS = []
+          def C(name, ok, detail="", warn=False):
+              st = "PASS" if ok else ("WARN" if warn else "FAIL")
+              CHECKS.append({"name": name, "status": st, "detail": detail})
+              print(f"[{st}] {name} — {detail}", flush=True)
+
+          # ───────────────────────────── أدوات adb ─────────────────────────────
+          def adb(*a, timeout=90):
+              try:
+                  r = subprocess.run(["adb", *a], capture_output=True, text=True, errors="replace", timeout=timeout)
+                  return r.stdout or ""
+              except Exception as e:
+                  return f"ERR {e}"
+
+          def sh(cmd, timeout=90):
+              return adb("shell", cmd, timeout=timeout).strip()
+
+          class Abort(Exception):
+              pass
+
+          # ───────────────────────────── logcat حيّ ─────────────────────────────
+          class Logcat:
+              def __init__(self, path):
+                  adb("logcat", "-c")
+                  self.lines = []
+                  self.f = open(path, "w", encoding="utf-8")
+                  self.p = subprocess.Popen(["adb", "logcat", "-v", "brief"], stdout=subprocess.PIPE,
+                                            stderr=subprocess.STDOUT, text=True, errors="replace", bufsize=1)
+                  threading.Thread(target=self._rd, daemon=True).start()
+              def _rd(self):
+                  for l in self.p.stdout:
+                      self.f.write(l); self.f.flush()
+                      self.lines.append((time.time(), l.rstrip()))
+              def find(self, pat, since=0.0):
+                  r = re.compile(pat)
+                  for t, l in list(self.lines):
+                      if t >= since and r.search(l):
+                          return t, l
+                  return None
+              def all(self, pat, since=0.0):
+                  r = re.compile(pat)
+                  return [(t, l) for t, l in list(self.lines) if t >= since and r.search(l)]
+              def stop(self):
+                  try: self.p.terminate()
+                  except Exception: pass
+
+          MON = {m: i for i, m in enumerate("Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(), 1)}
+          SCHED = re.compile(r"Scheduled (.+?) at \w{3} (\w{3}) (\d+) (\d+):(\d+):(\d+) \S+ (\d{4})")
+
+          def parse_sched(line, tzname):
+              m = SCHED.search(line)
+              if not m: return None
+              name, mon, d, H, M, S, Y = m.groups()
+              return name, dt.datetime(int(Y), MON[mon], int(d), int(H), int(M), int(S), tzinfo=ZoneInfo(tzname))
+
+          def latest(since, tzname):
+              out = {}
+              for t, l in log.all(r"Scheduled ", since):
+                  p = parse_sched(l, tzname)
+                  if p: out[p[0]] = p[1]
+              return out
+
+          # ───────────────────────────── حالة الجهاز ─────────────────────────────
+          def ringer():
+              v = sh("settings get global mode_ringer")
+              return int(v) if re.fullmatch(r"-?\d+", v or "") else -1
+
+          def svc_running():
+              return "ServiceRecord" in sh(f"dumpsys activity services {PKG}")
+
+          def notifs():
+              out = sh("dumpsys notification --noredact", timeout=60)
+              return [l.strip() for l in out.splitlines() if "NotificationRecord(" in l and PKG in l]
+
+          def wakelock_held():
+              return PKG + ":PrayerWakeLock" in sh("dumpsys power | grep -i wakelock")
+
+          def shot(name):
+              try:
+                  with open(f"{OUT}/{name}.png", "wb") as f:
+                      subprocess.run(["adb", "exec-out", "screencap", "-p"], stdout=f, timeout=30)
+              except Exception: pass
+
+          def set_tz(name):
+              sh(f"cmd alarm set-timezone {name}")
+              time.sleep(1)
+              if name not in sh("getprop persist.sys.timezone") and name not in sh("settings get global time_zone"):
+                  adb("root"); adb("wait-for-device"); sh(f"setprop persist.sys.timezone {name}")
+
+          def set_clock(when):
+              target = when.timestamp()
+              sh(f"cmd alarm set-time {int(target * 1000)}")
+              time.sleep(1)
+              def dev(): 
+                  v = sh("date +%s"); return int(v) if v.isdigit() else 0
+              if abs(dev() - target) > 10:                       # خطة بديلة (root)
+                  adb("root"); adb("wait-for-device")
+                  sh("date -u " + when.astimezone(dt.timezone.utc).strftime("%m%d%H%M%Y.%S"))
+                  time.sleep(1)
+              return abs(dev() - target) <= 10
+
+          def set_ringer(mode):
+              names = {0: "SILENT", 1: "VIBRATE", 2: "NORMAL"}
+              sh(f"cmd audio set-ringer-mode {names[mode]}")
+              if ringer() != mode:
+                  key = "KEYCODE_VOLUME_UP" if mode == 2 else "KEYCODE_VOLUME_DOWN"
+                  for _ in range(10):
+                      sh(f"input keyevent {key}")
+              time.sleep(1)
+              return ringer() == mode
+
+          def write_prefs(prefs):
+              rows = []
+              for k, v in prefs.items():
+                  if isinstance(v, bool):   rows.append(f'<boolean name="{k}" value="{str(v).lower()}" />')
+                  elif isinstance(v, float):rows.append(f'<float name="{k}" value="{v}" />')
+                  elif isinstance(v, int):  rows.append(f'<int name="{k}" value="{v}" />')
+                  else:                     rows.append(f'<string name="{k}">{escape(str(v))}</string>')
+              xml = "<?xml version='1.0' encoding='utf-8' standalone='yes' ?>\n<map>\n" + "\n".join(rows) + "\n</map>\n"
+              open(f"{OUT}/prefs.xml", "w", encoding="utf-8").write(xml)
+              adb("push", f"{OUT}/prefs.xml", "/data/local/tmp/moakete_prefs.xml")
+              sh(f"run-as {PKG} sh -c 'mkdir -p shared_prefs && cp /data/local/tmp/moakete_prefs.xml shared_prefs/moakete_prefs.xml'")
+              ok = "dhuhr_" in sh(f"run-as {PKG} cat shared_prefs/moakete_prefs.xml")
+              if not ok:                                         # خطة بديلة (root)
+                  adb("root"); adb("wait-for-device")
+                  uid = sh(f"stat -c %u /data/data/{PKG}")
+                  sh(f"mkdir -p /data/data/{PKG}/shared_prefs && cp /data/local/tmp/moakete_prefs.xml /data/data/{PKG}/shared_prefs/moakete_prefs.xml "
+                     f"&& chown {uid}:{uid} /data/data/{PKG}/shared_prefs/moakete_prefs.xml && restorecon -R /data/data/{PKG}/shared_prefs")
+              return ok
+
+          def make_prefs(cfg):
+              p = {}
+              for i, k in enumerate(KEYS):
+                  target = (i == cfg["idx"]) or cfg.get("all")
+                  p[f"{k}_sound_enabled"] = True
+                  p[f"{k}_moazin"] = MOAZIN[i]
+                  p[f"{k}_silent_enabled"] = bool(cfg.get("silent") and target)
+                  p[f"{k}_silent_s"] = float(cfg.get("s", 0.5))
+                  p[f"{k}_silent_e"] = float(cfg.get("e", 1.5))
+                  p[f"{k}_vibration_enabled"] = bool(cfg.get("vib_only") and target)
+                  p[f"{k}_vibration_only"] = bool(cfg.get("vib_only") and target)
+              if cfg.get("first_azan"):
+                  p["fajr_first_azan_enabled"] = True
+                  p["fajr_first_azan_minutes"] = 30.0
+              return p
+
+          # ───────────────────────────── تجهيز المحاكي ─────────────────────────────
+          def day_start(date_str=""):
+              d = dt.date.fromisoformat(date_str) if date_str else dt.datetime.now(ZoneInfo(TZ)).date()
+              return dt.datetime.combine(d, dt.time(0, 5), tzinfo=ZoneInfo(TZ))
+
+          def prepare(cfg):
+              for s in ["settings put global auto_time 0", "settings put global auto_time_zone 0",
+                        "settings put system screen_off_timeout 2147483647", "input keyevent KEYCODE_WAKEUP",
+                        "wm dismiss-keyguard", "svc power stayon true"]:
+                  sh(s)
+              set_tz(TZ)
+              apk = (glob.glob("apk/*.apk") or glob.glob("app/build/outputs/apk/debug/*.apk") or [""])[0]
+              out = adb("install", "-r", "-g", apk, timeout=180)
+              C("تثبيت التطبيق", "Success" in out, out.strip()[-200:])
+              if "Success" not in out: raise Abort("install failed")
+              for p in PERMS: sh(f"pm grant {PKG} {p}")
+              for op in ["SCHEDULE_EXACT_ALARM", "USE_EXACT_ALARM", "SYSTEM_ALERT_WINDOW"]:
+                  sh(f"appops set {PKG} {op} allow")
+              sh(f"cmd deviceidle whitelist +{PKG}")
+              sh(f"cmd notification {'allow_dnd' if cfg.get('dnd', True) else 'disallow_dnd'} {PKG}")
+              C("كتابة إعدادات الاختبار في التطبيق", write_prefs(make_prefs(cfg)), "moakete_prefs.xml", warn=True)
+              ok = set_clock(day_start(cfg.get("date", "")))
+              C("ضبط ساعة المحاكي على بداية اليوم", ok, f"{TZ}", warn=True)
+              t0 = time.time()
+              sh(f"monkey -p {PKG} -c android.intent.category.LAUNCHER 1")
+              time.sleep(10); shot("00_launch")
+              sched = latest(t0, TZ)
+              if len(sched) < 5:
+                  sh(f"am broadcast -n {PKG}/.PrayerAlarmReceiver -a android.intent.action.BOOT_COMPLETED --include-stopped-packages")
+                  time.sleep(6); sched = latest(t0, TZ)
+                  C("التطبيق يجدول الأذان عند فتحه", False,
+                    "لم تظهر رسائل الجدولة بعد الفتح (ربما شاشة الأذونات تمنعها) — استُخدم بث BOOT_COMPLETED بدلاً", warn=True)
+              else:
+                  C("التطبيق يجدول الأذان عند فتحه", True, ", ".join(f"{n} {d:%H:%M}" for n, d in sched.items()))
+              if len(sched) < 5: raise Abort("no prayer schedule")
+              return sched
+
+          # ───────────────────────────── تشغيل صلاة واحدة بوقت حقيقي ─────────────────────────────
+          def run_prayer(idx, T, cfg, lead=25, tag=""):
+              """يضع الساعة قبل وقت الصلاة بـ lead ثانية ثم يراقب كل شيء."""
+              silent, s, e, orig = cfg.get("silent", False), cfg.get("s", .5), cfg.get("e", 1.5), cfg.get("orig", 2)
+              name = NAMES[idx]
+              ok_r = set_ringer(orig)
+              C(f"{tag}ضبط وضع الهاتف قبل الاختبار = {RINGER[orig]}", ok_r, f"الحالي: {RINGER[ringer()]}", warn=True)
+              t_mark = time.time()
+              ok = set_clock(T - dt.timedelta(seconds=lead)); t_set = time.time()
+              C(f"{tag}ضبط الساعة قبل {name} بـ {lead} ثانية", ok, f"{T - dt.timedelta(seconds=lead):%Y-%m-%d %H:%M:%S}", warn=True)
+
+              rows, seen, gone, shots = [], False, 0, set()
+              max_s = lead + (e * 60 if silent else 0) + 210
+              while time.time() - t_set < max_s:
+                  el = time.time() - t_set
+                  r, sv = ringer(), svc_running()
+                  rows.append((round(el, 1), f"{(T - dt.timedelta(seconds=lead) + dt.timedelta(seconds=el)):%H:%M:%S}", r, int(sv)))
+                  if sv: seen, gone = True, 0
+                  elif seen: gone += 1
+                  if "f" not in shots and log.find(r"Prayer alarm triggered", t_mark):
+                      shots.add("f"); time.sleep(3); shot(f"{tag}{idx}_1_fired")
+                  if r == 0 and "s" not in shots: shots.add("s"); shot(f"{tag}{idx}_2_silent_on")
+                  if "s" in shots and r == orig and "e" not in shots: shots.add("e"); shot(f"{tag}{idx}_3_silent_off")
+                  ended = log.find(r"Silent mode ENDED", t_mark) if silent else True
+                  if seen and gone >= 3 and ended: break
+                  time.sleep(1.5)
+              with open(f"{OUT}/{tag}{idx}_timeline.csv", "w") as f:
+                  f.write("seconds,device_clock,ringer,service_running\n")
+                  for r in rows: f.write(",".join(map(str, r)) + "\n")
+
+              # ── التقييم ──
+              fire = log.find(r"Prayer alarm triggered", t_mark)
+              if not fire:
+                  C(f"{tag}{name}: الأذان بدأ في وقته", False, "لم يصل المنبّه للمستقبِل (PrayerAlarmReceiver) أبداً")
+                  return
+              delta = fire[0] - (t_set + lead)
+              C(f"{tag}{name}: الأذان بدأ في وقته", abs(delta) <= 20, f"انحراف {delta:+.1f} ثانية عن الوقت المحدد")
+              t_srv = log.find(r"Starting prayer service for", t_mark)
+              C(f"{tag}{name}: بدأت خدمة الأذان", bool(t_srv), t_srv[1][-80:] if t_srv else "")
+              bad = log.find(r"Error starting prayer service|ForegroundServiceStartNotAllowed|BackgroundServiceStartNotAllowed|MissingForegroundServiceType|ForegroundServiceTypeNotAllowed", t_mark)
+              C(f"{tag}{name}: لا أخطاء بدء الخدمة الأمامية", not bad, bad[1][-160:] if bad else "")
+              lk = log.find(r"Azan lock screen launched", t_mark)
+              C(f"{tag}{name}: شاشة قفل الأذان فُتحت", bool(lk), "أو اعتمد على fullScreenIntent" if not lk else "", warn=True)
+              prep = log.find(r"MediaPlayer prepared", t_mark); err = log.find(r"MediaPlayer error|Error playing azan", t_mark)
+              C(f"{tag}{name}: الصوت اشتغل (MediaPlayer)", bool(prep) and not err,
+                "المحاكي بلا كرت صوت — قد لا يعني خللاً بالتطبيق" if not prep or err else "بدأ التشغيل", warn=True)
+              if prep:
+                  done = log.find(r"Azan completed|Azan sound stopped", prep[0])
+                  C(f"{tag}{name}: الأذان انتهى بنفسه", bool(done), f"المدة ≈ {done[0]-prep[0]:.0f} ثانية" if done else "لم ينتهِ ضمن المهلة", warn=True)
+
+              if silent:
+                  sc = log.find(r"Silent alarms scheduled", t_mark)
+                  s_on = log.find(r"Silent mode STARTED", t_mark); s_off = log.find(r"Silent mode ENDED", t_mark)
+                  miss = log.find(r"DND permission not granted", t_mark)
+                  if cfg.get("dnd", True):
+                      C(f"{tag}{name}: جدولة الصامت", bool(sc), sc[1][-80:] if sc else "")
+                      if sc and s_on:
+                          d_on = s_on[0] - sc[0]
+                          C(f"{tag}{name}: بدء الصامت بعد {s} د", abs(d_on - s * 60) <= 12, f"بدأ بعد {d_on:.0f}ث من الأذان (المتوقع {s*60:.0f}ث)")
+                      else:
+                          C(f"{tag}{name}: بدء الصامت", False, "لم يُسجَّل Silent mode STARTED")
+                      r_on = next((x for x in rows if x[2] == 0), None)
+                      C(f"{tag}{name}: وضع الهاتف صار صامت فعلاً", bool(r_on), f"عند +{r_on[0]}ث" if r_on else "mode_ringer لم يصبح 0")
+                      if sc and s_off:
+                          d_off = s_off[0] - sc[0]
+                          C(f"{tag}{name}: نهاية الصامت بعد {e} د", abs(d_off - e * 60) <= 12, f"انتهى بعد {d_off:.0f}ث (المتوقع {e*60:.0f}ث)")
+                      else:
+                          C(f"{tag}{name}: نهاية الصامت", False, "لم يُسجَّل Silent mode ENDED")
+                      back = next((x for x in rows if r_on and x[0] > r_on[0] and x[2] == orig), None)
+                      C(f"{tag}{name}: الوضع رجع لـ {RINGER[orig]} بعد الانتهاء", bool(back) and ringer() == orig,
+                        (f"رجع عند +{back[0]}ث" if back else f"بقي على {RINGER[ringer()]} — خلل: الوضع لم يُستعَد"))
+                      if r_on and back:
+                          C(f"{tag}{name}: مدة الصامت الفعلية", True, f"{back[0]-r_on[0]:.0f} ثانية (المطلوب {(e-s)*60:.0f})")
+                  else:
+                      C(f"{tag}{name}: بدون صلاحية DND — الوضع لا يتغير", not any(x[2] == 0 for x in rows), "كما هو مصمَّم")
+                      C(f"{tag}{name}: إشعار تنبيه نقص الصلاحية ظهر", bool(miss) , "رسالة DND permission not granted" if miss else "لم يظهر تنبيه")
+              else:
+                  C(f"{tag}{name}: الوضع لم يتغيّر (الصامت معطّل)", all(x[2] == orig for x in rows), f"{RINGER[ringer()]}")
+
+              time.sleep(2)
+              C(f"{tag}{name}: الخدمة توقفت في النهاية", not svc_running(), "")
+              left = [n for n in notifs() if "|1002|" not in n]
+              C(f"{tag}{name}: لا إشعار عالق", not left, left[0][-120:] if left else "", warn=True)
+              C(f"{tag}{name}: WakeLock تحرّر", not wakelock_held(), "", warn=True)
+              fatal = log.find(r"FATAL EXCEPTION", t_mark)
+              C(f"{tag}{name}: لا انهيار", not fatal, fatal[1][-160:] if fatal else "")
+
+          # ───────────────────────────── السيناريوهات ─────────────────────────────
+          def sc_single(cfg):
+              sched = prepare(cfg)
+              idx = cfg["idx"]; T = sched[NAMES[idx]]
+              t0 = time.time()
+              run_prayer(idx, T, cfg, lead=int(cfg.get("lead", 25)))
+              if cfg.get("rollover"):
+                  r = log.find(r"scheduling ALL prayers for tomorrow", t0)
+                  C("بعد العشاء: جدولة كل صلوات الغد", bool(r), "")
+                  if r:
+                      time.sleep(2); nxt = latest(r[0] - 1, TZ)
+                      good = len(nxt) >= 5 and all(nxt[n].date() == T.date() + dt.timedelta(days=1) for n in NAMES if n in nxt)
+                      C("تواريخ الجدولة = اليوم التالي", good, ", ".join(f"{n} {d:%m-%d %H:%M}" for n, d in nxt.items()))
+                      if cfg.get("first_azan"):
+                          C("الأذان الأول (قبل الفجر) مجدول", "الأذان الأول" in nxt, "")
+
+          def sc_all_prayers():
+              cfg = dict(all=True, silent=False, orig=2, dnd=True)
+              sched = prepare(cfg)
+              for i in range(5):
+                  run_prayer(i, sched[NAMES[i]], cfg, lead=20, tag=f"[{i+1}/5] ")
+                  time.sleep(3)
+
+          def sc_clock_tz_boot():
+              sched = prepare(dict(idx=1, silent=False, dnd=True))
+              t0 = time.time(); sh("cmd alarm set-timezone Asia/Dubai"); time.sleep(7)
+              new = latest(t0, "Asia/Dubai")
+              ok = len(new) >= 5 and all(abs((new[n] - sched[n]).total_seconds()) <= 120 for n in NAMES)
+              C("تغيير المنطقة الزمنية → إعادة الجدولة بنفس اللحظة الفعلية", ok,
+                ", ".join(f"{n}: {sched[n]:%H:%M}→{new[n].astimezone(ZoneInfo('Asia/Dubai')):%H:%M}" for n in NAMES if n in new) or "لا رسائل جدولة (TimezoneChangeReceiver لم يعمل)")
+              sh(f"am force-stop {PKG}"); time.sleep(2)
+              before = sh(f"dumpsys alarm | grep -c {PKG}")
+              t1 = time.time()
+              sh(f"am broadcast -n {PKG}/.PrayerAlarmReceiver -a android.intent.action.BOOT_COMPLETED --include-stopped-packages")
+              time.sleep(7)
+              after = latest(t1, "Asia/Dubai")
+              C("إعادة تشغيل الجهاز (BOOT_COMPLETED) → يعيد جدولة الأذان", len(after) >= 5, f"alarms قبل={before}, الجدولة بعد: {len(after)}")
+              t2 = time.time()
+              nxt_day = (new["الظهر"].astimezone(ZoneInfo("Asia/Dubai")) + dt.timedelta(days=1)).replace(hour=0, minute=5, second=0)
+              set_clock(nxt_day); time.sleep(7)
+              d = latest(t2, "Asia/Dubai")
+              C("تغيّر التاريخ (يوم جديد) → جدولة اليوم الجديد", len(d) >= 5 and all(v.date() == nxt_day.date() for v in d.values()),
+                ", ".join(f"{n} {v:%m-%d}" for n, v in d.items()) or "لا جدولة")
+
+          def sc_ui_stress():
+              prepare(dict(idx=1, silent=False, dnd=True))
+              size = re.search(r"(\d+)x(\d+)", sh("wm size")); W, H = (int(size[1]), int(size[2])) if size else (1080, 2400)
+              pages, hashes = [], set()
+              def snap(n):
+                  shot(n)
+                  h = hashlib.md5(open(f"{OUT}/{n}.png", "rb").read()).hexdigest(); hashes.add(h)
+                  sh("uiautomator dump /sdcard/ui.xml >/dev/null 2>&1")
+                  txt = re.findall(r'text="([^"]+)"', sh("cat /sdcard/ui.xml"))
+                  pages.append(f"## {n}\n" + " | ".join(txt[:25]))
+              def alive(): return bool(sh(f"pidof {PKG}"))
+              snap("ui_00_home")
+              for i in range(1, 5):
+                  sh(f"input swipe {int(W*.85)} {int(H*.5)} {int(W*.15)} {int(H*.5)} 300"); time.sleep(1.5); snap(f"ui_0{i}_swipeL")
+              for i in range(1, 5):
+                  sh(f"input swipe {int(W*.15)} {int(H*.5)} {int(W*.85)} {int(H*.5)} 300"); time.sleep(1.5); snap(f"ui_1{i}_swipeR")
+              open(f"{OUT}/ui_pages.txt", "w", encoding="utf-8").write("\n\n".join(pages))
+              C("التنقل بين الشاشات الخمس", len(hashes) >= 4, f"{len(hashes)} شاشة مختلفة")
+              C("التطبيق حيّ بعد التنقل", alive(), "")
+              for label, on, off in [("الوضع الليلي", "cmd uimode night yes", "cmd uimode night no"),
+                                     ("خط كبير 1.5×", "settings put system font_scale 1.5", "settings put system font_scale 1.0"),
+                                     ("الشاشة أفقية", "settings put system accelerometer_rotation 0; settings put system user_rotation 1",
+                                                       "settings put system user_rotation 0")]:
+                  sh(on); time.sleep(3); snap("ui_" + label.replace(" ", "_")); C(f"{label}: لا انهيار", alive(), ""); sh(off); time.sleep(2)
+              for p in PERMS: sh(f"pm revoke {PKG} {p}")
+              sh(f"am force-stop {PKG}"); sh(f"monkey -p {PKG} -c android.intent.category.LAUNCHER 1"); time.sleep(8); snap("ui_no_permissions")
+              C("التشغيل بدون أي صلاحية: لا انهيار", alive(), "")
+              for p in PERMS: sh(f"pm grant {PKG} {p}")
+              sh(f"am force-stop {PKG}"); sh(f"monkey -p {PKG} -c android.intent.category.LAUNCHER 1"); time.sleep(6)
+              out = sh(f"monkey -p {PKG} --throttle 200 --pct-syskeys 0 --pct-appswitch 0 -s 7 -v 1200", timeout=900)
+              open(f"{OUT}/monkey.txt", "w", encoding="utf-8").write(out)
+              C("اختبار عشوائي 1200 حدث", "// CRASH" not in out and "ANR" not in out, "لا انهيار" if "// CRASH" not in out else "انهيار — راجع monkey.txt")
+              snap("ui_after_monkey")
+
+          def final_log_checks():
+              errs = collections.Counter()
+              for _, l in log.lines:
+                  m = re.match(r"E/([^(]+)\(", l)
+                  if m: errs[m[1].strip()] += 1
+              open(f"{OUT}/errors_by_tag.txt", "w", encoding="utf-8").write("\n".join(f"{c:5d}  {t}" for t, c in errs.most_common(40)))
+              fatal = log.all(r"FATAL EXCEPTION")
+              C("لا FATAL EXCEPTION في السجل كاملاً", not fatal, fatal[0][1][-160:] if fatal else "")
+              anr = log.all(r"ANR in " + PKG)
+              C("لا ANR (تجمّد)", not anr, "")
+              fb = log.all(r"(FirebaseAuth|GoogleAuthManager|Firestore).*(Exception|failed|error)")
+              C("تسجيل الدخول/فايربيز", not fb, f"{len(fb)} خطأ (متوقع على محاكي بلا حساب جوجل)" if fb else "", warn=True)
+
+          # ───────────────────────────── main ─────────────────────────────
+          SCEN = {
+            "silent_with_dnd": dict(idx=1, silent=True, dnd=True,  orig=2),
+            "silent_no_dnd":   dict(idx=1, silent=True, dnd=False, orig=2),
+            "silent_disabled": dict(idx=2, silent=False, dnd=True, orig=2),
+            "ringer_vibrate":  dict(idx=3, silent=True, dnd=True,  orig=1),
+            "vibration_only":  dict(idx=0, silent=False, dnd=True, orig=2, vib_only=True),
+            "isha_rollover":   dict(idx=4, silent=True, dnd=True,  orig=2, rollover=True, first_azan=True),
+          }
+
+          def custom_cfg():
+              e = os.environ
+              return dict(idx=KEYS.index(e.get("IN_PRAYER") or "dhuhr"), silent=True,
+                          s=float(e.get("IN_S") or 0.5), e=float(e.get("IN_E") or 1.5),
+                          orig=1 if e.get("IN_RINGER") == "vibrate" else 2,
+                          dnd=(e.get("IN_DND", "true") != "false"), date=e.get("IN_DATE", ""),
+                          rollover=(e.get("IN_PRAYER") == "isha"))
+
+          def summary(root):
+              rows, bad = [], 0
+              md = ["# نتيجة الفحص الشامل\n", "| السيناريو | ✅ | ⚠️ | ❌ |", "|---|---|---|---|"]
+              details = []
+              for p in sorted(glob.glob(f"{root}/**/result.json", recursive=True)):
+                  r = json.load(open(p, encoding="utf-8")); c = r["checks"]
+                  n = lambda s: sum(1 for x in c if x["status"] == s)
+                  md.append(f"| {r['scenario']} (API {r['api']}) | {n('PASS')} | {n('WARN')} | {n('FAIL')} |")
+                  bad += n("FAIL")
+                  for x in c:
+                      if x["status"] != "PASS":
+                          details.append(f"- {'❌' if x['status']=='FAIL' else '⚠️'} **{r['scenario']}/API{r['api']}** — {x['name']}: {x['detail']}")
+              md += ["", "## الأعطال والتحذيرات", *(details or ["لا شيء 🎉"])]
+              text = "\n".join(md); print(text)
+              if os.environ.get("GITHUB_STEP_SUMMARY"):
+                  open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8").write(text + "\n")
+              open(f"{root}/FULL_SUMMARY.md", "w", encoding="utf-8").write(text)
+              sys.exit(1 if bad else 0)
+
+          if __name__ == "__main__":
+              if sys.argv[1] == "summary":
+                  summary(sys.argv[2] if len(sys.argv) > 2 else "all-reports")
+              SCN = sys.argv[1]; API = os.environ.get("API_LEVEL", "?")
+              OUT = f"report/{SCN}-api{API}"; os.makedirs(OUT, exist_ok=True)
+              log = Logcat(f"{OUT}/logcat.txt")
+              try:
+                  if SCN == "all_prayers_day":   sc_all_prayers()
+                  elif SCN == "clock_tz_boot":   sc_clock_tz_boot()
+                  elif SCN == "ui_stress":       sc_ui_stress()
+                  elif SCN == "custom":          sc_single(custom_cfg())
+                  else:                          sc_single(SCEN[SCN])
+                  final_log_checks()
+              except Abort as e:
+                  C("إيقاف السيناريو", False, str(e))
+              except Exception:
+                  C("خطأ في سكربت الاختبار نفسه", False, traceback.format_exc()[-400:])
+              finally:
+                  json.dump({"scenario": SCN, "api": API, "checks": CHECKS}, open(f"{OUT}/result.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+                  log.stop()
+              sys.exit(0)
+          PYEOF
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: audit-script
+          path: audit/audit.py
+
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
@@ -137,6 +591,11 @@ jobs:
           name: apk-for-emulator
           path: apk
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: audit-script
+          path: audit
+
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -159,7 +618,7 @@ jobs:
           target: google_apis
           profile: pixel_6
           disable-animations: true
-          script: python3 .github/scripts/audit.py ${{ matrix.scenario }}
+          script: python3 audit/audit.py ${{ matrix.scenario }}
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -173,13 +632,16 @@ jobs:
     if: always() && needs.emulator.result != 'skipped'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: audit-script
+          path: audit
       - uses: actions/download-artifact@v4
         with:
           pattern: scenario-*
           path: all-reports
       - name: Combined report
-        run: python3 .github/scripts/audit.py summary all-reports
+        run: python3 audit/audit.py summary all-reports
       - uses: actions/upload-artifact@v4
         if: always()
         with:
