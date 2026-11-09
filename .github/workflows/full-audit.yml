@@ -2,10 +2,35 @@ name: Full Audit
 
 on:
   workflow_dispatch:
+    inputs:
+      prayer:
+        description: "الصلاة المراد اختبارها (سيناريو custom)"
+        type: choice
+        options: [fajr, dhuhr, asr, maghrib, isha]
+        default: dhuhr
+      silent_start:
+        description: "بدء الصامت: كم دقيقة بعد بدء الأذان"
+        default: "0.5"
+      silent_end:
+        description: "نهاية الصامت: كم دقيقة بعد بدء الأذان"
+        default: "1.5"
+      ringer_before:
+        description: "وضع الهاتف قبل الأذان"
+        type: choice
+        options: [normal, vibrate]
+        default: normal
+      dnd_granted:
+        description: "صلاحية عدم الإزعاج ممنوحة؟"
+        type: boolean
+        default: true
+      test_date:
+        description: "تاريخ الاختبار YYYY-MM-DD (فارغ = اليوم)"
+        default: ""
   push:
     branches: [ main, master ]
 
 jobs:
+  # ───────────── 1) البناء والفحص الثابت ─────────────
   analyze:
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -88,71 +113,29 @@ jobs:
           name: apk-for-emulator
           path: app/build/outputs/apk/debug/*.apk
 
+      - name: Stop here if the build failed
+        run: grep -q PASS report/build.status
+
+  # ───────────── 2) سيناريوهات المحاكي (وقت حقيقي) ─────────────
   emulator:
     needs: analyze
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        api: [28, 34]
+        scenario: ${{ fromJSON(github.event_name == 'workflow_dispatch' && '["custom","silent_with_dnd","silent_no_dnd","silent_disabled","ringer_vibrate","vibration_only","isha_rollover","all_prayers_day","clock_tz_boot","ui_stress"]' || '["silent_with_dnd","silent_no_dnd","silent_disabled","ringer_vibrate","vibration_only","isha_rollover","all_prayers_day","clock_tz_boot","ui_stress"]') }}
+        api: [34]
+        include:
+          - scenario: silent_with_dnd
+            api: 28
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/download-artifact@v4
         with:
           name: apk-for-emulator
-          path: app/build/outputs/apk/debug
-
-      - name: Write emulator check script
-        run: |
-          cat > emulator_check.sh << 'EOF'
-          #!/usr/bin/env bash
-          set -u
-          mkdir -p report
-          APK=$(ls app/build/outputs/apk/debug/*.apk 2>/dev/null | head -1)
-          D=report/details.txt
-          : > "$D"
-          if [ -z "$APK" ]; then
-            echo "NO APK" >> "$D"
-            echo FAIL > report/install.status
-            exit 0
-          fi
-          AAPT=$(ls $ANDROID_HOME/build-tools/*/aapt2 | tail -1)
-          PKG=$($AAPT dump packagename "$APK")
-          echo "Package: $PKG" >> "$D"
-          if adb install -r -g "$APK" > report/install.log 2>&1; then
-            echo PASS > report/install.status
-          else
-            echo FAIL > report/install.status
-            cat report/install.log >> "$D"
-            exit 0
-          fi
-          adb logcat -c
-          adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
-          sleep 10
-          adb exec-out screencap -p > report/screen_launch.png
-          if [ -n "$(adb shell pidof "$PKG")" ]; then echo PASS > report/launch.status; else echo FAIL > report/launch.status; fi
-          adb shell dumpsys alarm > report/alarms_before.txt
-          echo "Alarm entries after launch: $(grep -c "$PKG" report/alarms_before.txt)" >> "$D"
-          adb shell am broadcast -a android.intent.action.BOOT_COMPLETED -p "$PKG" >/dev/null 2>&1
-          sleep 5
-          adb shell dumpsys alarm > report/alarms_after.txt
-          AFTER=$(grep -c "$PKG" report/alarms_after.txt)
-          echo "Alarm entries after BOOT_COMPLETED: $AFTER" >> "$D"
-          if [ "$AFTER" -gt 0 ]; then echo PASS > report/alarms.status; else echo "FAIL (no alarms)" > report/alarms.status; fi
-          if adb shell monkey -p "$PKG" --throttle 300 -s 42 --pct-syskeys 0 -v 600 > report/monkey.log 2>&1; then echo PASS > report/monkey.status; else echo FAIL > report/monkey.status; fi
-          adb exec-out screencap -p > report/screen_after_monkey.png
-          adb logcat -d > report/logcat.txt
-          if grep -q "FATAL EXCEPTION" report/logcat.txt; then
-            echo FAIL > report/crash.status
-            grep -A12 "FATAL EXCEPTION" report/logcat.txt | head -n 60 >> "$D"
-          else
-            echo PASS > report/crash.status
-          fi
-          if grep -q "ANR in $PKG" report/logcat.txt; then echo FAIL > report/anr.status; else echo PASS > report/anr.status; fi
-          EOF
-          chmod +x emulator_check.sh
+          path: apk
 
       - name: Enable KVM
         run: |
@@ -160,32 +143,45 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Run on emulator
+      - name: Run scenario on emulator
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          API_LEVEL: ${{ matrix.api }}
+          IN_PRAYER: ${{ inputs.prayer }}
+          IN_S: ${{ inputs.silent_start }}
+          IN_E: ${{ inputs.silent_end }}
+          IN_RINGER: ${{ inputs.ringer_before }}
+          IN_DND: ${{ inputs.dnd_granted }}
+          IN_DATE: ${{ inputs.test_date }}
         with:
           api-level: ${{ matrix.api }}
           arch: x86_64
           target: google_apis
+          profile: pixel_6
           disable-animations: true
-          script: bash emulator_check.sh
-
-      - name: Report for this Android version
-        if: always()
-        run: |
-          {
-            echo "# Android API ${{ matrix.api }}"
-            echo
-            echo "| Check | Result |"
-            echo "|---|---|"
-            for f in install launch alarms monkey crash anr; do
-              echo "| $f | $(cat report/$f.status 2>/dev/null || echo NOT RUN) |"
-            done
-            echo
-            cat report/details.txt 2>/dev/null
-          } >> "$GITHUB_STEP_SUMMARY"
+          script: python3 .github/scripts/audit.py ${{ matrix.scenario }}
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: emulator-api-${{ matrix.api }}
+          name: scenario-${{ matrix.scenario }}-api${{ matrix.api }}
           path: report/
+
+  # ───────────── 3) التقرير النهائي الموحّد ─────────────
+  summary:
+    needs: emulator
+    if: always() && needs.emulator.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: scenario-*
+          path: all-reports
+      - name: Combined report
+        run: python3 .github/scripts/audit.py summary all-reports
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: FULL-SUMMARY
+          path: all-reports/FULL_SUMMARY.md
