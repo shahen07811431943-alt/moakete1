@@ -56,6 +56,9 @@ class PrayerService : Service() {
 
         // مفتاح لحفظ originalRingerMode في SharedPrefs
         const val PREF_ORIGINAL_RINGER = "original_ringer_mode"
+
+        // "نحن من غيّر وضع الهاتف" — محفوظة في ملف دائم حتى لا تضيع لو ماتت الخدمة قبل نهاية الصامت
+        const val PREF_WE_CHANGED_RINGER = "we_changed_ringer_mode"
     }
 
     // ─── onStartCommand ──────────────────────────────────────────────────────
@@ -306,6 +309,8 @@ class PrayerService : Service() {
 
             audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
             weChangedRingerMode = true
+            getSharedPreferences("moakete_prefs", Context.MODE_PRIVATE)
+                .edit().putBoolean(PREF_WE_CHANGED_RINGER, true).commit()
             Log.d(TAG, "Silent mode STARTED — original was $originalRingerMode")
         } catch (e: Exception) {
             Log.e(TAG, "Error starting silent mode", e)
@@ -327,15 +332,19 @@ class PrayerService : Service() {
 
     // ─── استعادة الوضع الصوتي بأمان ─────────────────────────────────────────
     private fun restoreRingerIfNeeded() {
-        if (!weChangedRingerMode) return   // ← لم نغيّره نحن
+        val prefs = getSharedPreferences("moakete_prefs", Context.MODE_PRIVATE)
+        // نسخة جديدة من الخدمة تبدأ بـ false → نقرأ الملاحظة من الملف الدائم أيضاً
+        if (!weChangedRingerMode && !prefs.getBoolean(PREF_WE_CHANGED_RINGER, false)) return   // ← لم نغيّره نحن
         try {
             val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
             val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
                 !nm.isNotificationPolicyAccessGranted) return
 
+            originalRingerMode = prefs.getInt(PREF_ORIGINAL_RINGER, originalRingerMode)
             audioManager.ringerMode = originalRingerMode
             weChangedRingerMode = false
+            prefs.edit().putBoolean(PREF_WE_CHANGED_RINGER, false).commit()
             Log.d(TAG, "Ringer restored to: $originalRingerMode")
         } catch (e: Exception) {
             Log.e(TAG, "Error restoring ringer", e)
